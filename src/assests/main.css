@@ -4,7 +4,8 @@ body {
 }
 
 p {
-    line-height: 200px;
+    line-height: 20px;
+    word-break: keep-all;
 }
 
 #next-question {

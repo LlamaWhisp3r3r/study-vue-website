@@ -1,17 +1,24 @@
 <script>
+import { getFirestore, collection, getDocs, addDoc} from "firebase/firestore";
+import app from './firebaseIntegration.js'
+const db = getFirestore(app)
+console.log("Got Here")
+
+let firebaseCategories = []
+
+const querySnapshots = await getDocs(collection(db, "listOfCollections"));
+querySnapshots.forEach((doc) => {
+  firebaseCategories.push(doc.data().collectionName)
+  console.log(firebaseCategories[0])
+});
+
 export default {
     data() {
         return {
-            question: [
-                'Am I Hot?',
-                'How About Now',
-                'Welcome to the Jungle'
-            ],
-            answer: [
-                'Oh Heck Ya!',
-                'I don\'t think much has changed',
-                'Thank you'
-            ],
+            selectedCategory: 0,
+            categories: firebaseCategories,
+            question: [],
+            answer: [],
             count: 0,
             countArray: [],
             degrees: "rotateY(0deg)",
@@ -19,6 +26,10 @@ export default {
             newQuestion: "",
             newAnswer: "",
         }
+    },
+    async create() {
+        console.log("Creating Method")
+        this.setAnswersQuestions()
     },
     methods: {
         increaseCount() {
@@ -54,12 +65,31 @@ export default {
             this.resetCard()
             this.increaseCount()
         },
-        inputNewQA() {
+        async inputNewQA() {
             if (this.newQuestion && this.newAnswer) {
+                const docRef = await addDoc(collection(db, "ITIL"), {
+                    question: this.newQuestion,
+                    answer: this.newAnswer
+                });
                 this.question.push(this.newQuestion)
                 this.answer.push(this.newAnswer)
                 this.clearTextArea()
+                this.createCountArray()
             }
+        },
+        async getCategoryAnswerDocs(category) {
+            let computed_answers = []
+            const querySnapshot = await getDocs(collection(db, category));
+            querySnapshot.forEach((doc) => {
+                this.answer.push(doc.data().answer)
+            });
+        },
+        async getCategoryQuestionDocs(category) {
+            let computed_question = []
+            const querySnapshot = await getDocs(collection(db, category));
+            querySnapshot.forEach((doc) => {
+                this.question.push(doc.data().question)
+            });
         },
         clearTextArea() {
             this.newAnswer = ""
@@ -104,13 +134,19 @@ export default {
             this.countArray = ranNums
             console.log(this.countArray)
             this.count = 0
+        },
+        async setAnswersQuestions() {
+            await this.getCategoryAnswerDocs(this.categories[this.selectedCategory])
+            await this.getCategoryQuestionDocs(this.categories[this.selectedCategory])
         }
     },
-    mounted() {
+    async mounted() {
+        await this.setAnswersQuestions()
         this.createCountArray()
     },
     computed: {
         getQuestion() {
+            console.log(this.question)
             if (this.question.length > 0 && this.count < this.question.length) {
                 return this.question[this.countArray[this.count]]
             } else {
@@ -118,7 +154,8 @@ export default {
             }
         },
         getAnswer() {
-            if (this.question.length > 0 && this.count < this.question.length) {
+            console.log(this.answer)
+            if (this.answer.length > 0 && this.count < this.answer.length) {
                 return this.answer[this.countArray[this.count]]
             } else {
                 return 'No More Answers'

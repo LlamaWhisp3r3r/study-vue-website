@@ -11,3 +11,6 @@ yarn-error.log*
 
 # Editor settings
 .vscodegit
+
+# Disregard firebase integration
+src/firebaseIntegration.js
